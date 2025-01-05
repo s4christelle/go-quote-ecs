@@ -204,11 +204,7 @@ docker tag go-quotes-app:latest 123456789012.dkr.ecr.us-east-1.amazonaws.com/go-
 docker push 123456789012.dkr.ecr.us-east-1.amazonaws.com/go-quotes-app:latest
 ```
 
-### 3. ECS Service Deployment & Update
-- Option 1: If your task definition is already configured for `:latest`, re-run `terraform apply` or force a new deployment in ECS.
-- Option 2: If you version your images, update the task definition to the new tag, then apply again.
-
-### 4. Verification
+### 3. Verification
 #### Find Your ALB DNS Name
 - From Terraform output (e.g., `alb_dns_name`), or
 - AWS Console under EC2 -> Load Balancers
@@ -219,14 +215,7 @@ curl http://<ALB_DNS_NAME>/quotes
 ```
 You should see the JSON quotes response.
 
-## 7. Cleanup
-- To clean up all resources, run:
-```bash
-terraform destroy
-```
-Type `yes` when prompted.
-
-## 8. Additional Notes
+## 4. Additional Notes
 - Ensure your AWS credentials have sufficient permissions for ECR, ECS, and ALB.
 - Modify the `main.go` or `Dockerfile` as needed to fit specific project requirements.
 - Use a CI/CD pipeline for automated deployment to AWS.
