@@ -1,34 +1,36 @@
-Go Quotes App on AWS ECS (Fargate)
-A Go web application that scrapes quotes from quotes.toscrape.com and returns up to 100 results as JSON via an HTTP endpoint. This repository includes instructions for local development, Docker containerization, and an AWS ECS (Fargate) deployment using Terraform.
+# Go Quotes App on AWS ECS (Fargate)
 
-Table of Contents
-Overview
-Architecture
-Prerequisites
-Local Development
-Containerization with Docker
-AWS Deployment with Terraform & ECS
-1. Initialize & Apply Terraform
-2. Push Docker Image to ECR
-3. ECS Service Deployment & Update
-4. Verification
-Cleanup
-Additional Notes
-1. Overview
-Language: Go
-Web Scraper: Uses the Colly library
-Endpoint: Returns JSON quotes at GET /quotes
-Deployment:
-Docker for containerization
-AWS ECS (Fargate) for serverless containers
-Application Load Balancer (ALB) for traffic distribution
-Auto Scaling based on CPU usage
-Terraform for Infrastructure as Code
-2. Architecture
-ascii
-Copy code
+A Go web application that scrapes quotes from `quotes.toscrape.com` and returns up to 100 results as JSON via an HTTP endpoint. This repository includes instructions for local development, containerization with Docker, and deployment to AWS ECS (Fargate) using Terraform.
+
+## Table of Contents
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Prerequisites](#prerequisites)
+- [Local Development](#local-development)
+- [Containerization with Docker](#containerization-with-docker)
+- [AWS Deployment with Terraform & ECS](#aws-deployment-with-terraform--ecs)
+  1. [Initialize & Apply Terraform](#1-initialize--apply-terraform)
+  2. [Push Docker Image to ECR](#2-push-docker-image-to-ecr)
+  3. [ECS Service Deployment & Update](#3-ecs-service-deployment--update)
+  4. [Verification](#4-verification)
+- [Cleanup](#cleanup)
+- [Additional Notes](#additional-notes)
+
+## 1. Overview
+- **Language:** Go
+- **Web Scraper:** Uses the Colly library
+- **Endpoint:** Returns JSON quotes at `GET /quotes`
+- **Deployment:**
+  - Docker for containerization
+  - AWS ECS (Fargate) for serverless containers
+  - Application Load Balancer (ALB) for traffic distribution
+  - Auto Scaling based on CPU usage
+  - Terraform for Infrastructure as Code
+
+## 2. Architecture
+```
         ┌───────────────┐       (1) 
-        │ AWS ECR       │  <-- Docker image
+        │    AWS ECR    │  <-- Docker image
         └───────────────┘
                │
                ▼
@@ -38,39 +40,40 @@ Copy code
                │
                ▼
         ┌────────────────┐   (3)
-        │  ALB (HTTP:80) │  <-- Routes traffic to ECS tasks
+        │ ALB (HTTP:80)  │  <-- Routes traffic to ECS tasks
         └────────────────┘
                │
                ▼
      User Traffic (Internet)
-AWS ECR hosts the Docker image.
-AWS ECS Fargate runs containers in a serverless environment.
-Application Load Balancer routes incoming requests from the internet to your running containers in ECS.
-3. Prerequisites
-Go (1.18+ recommended): Install Go
-Docker: Install Docker
-AWS CLI (with valid credentials): Install AWS CLI
-Terraform (1.1+): Install Terraform
-Git: For cloning the repository
-4. Local Development
-Clone the Repository
+```
+- **AWS ECR:** Hosts the Docker image.
+- **AWS ECS (Fargate):** Runs containers in a serverless environment.
+- **Application Load Balancer (ALB):** Routes incoming requests to running containers in ECS.
 
-bash
-Copy code
+## 3. Prerequisites
+- **Go (1.18+ recommended):** [Install Go](https://golang.org/dl/)
+- **Docker:** [Install Docker](https://www.docker.com/)
+- **AWS CLI (with valid credentials):** [Install AWS CLI](https://aws.amazon.com/cli/)
+- **Terraform (1.1+):** [Install Terraform](https://www.terraform.io/)
+- **Git:** [Install Git](https://git-scm.com/)
+
+## 4. Local Development
+
+### Clone the Repository
+```bash
 git clone <repository-url>
 cd go-quotes-ecs-deployment
-Initialize Go Module & Install Dependencies
+```
 
-bash
-Copy code
+### Initialize Go Module & Install Dependencies
+```bash
 go mod init go-scraper
 go get -u github.com/gocolly/colly
 go mod tidy
-Create/Update main.go
-Example main.go:
+```
 
-go
-Copy code
+### Create/Update `main.go`
+```go
 package main
 
 import (
@@ -123,20 +126,20 @@ func main() {
     log.Println("Server is running on http://localhost:8080")
     log.Fatal(http.ListenAndServe(":8080", nil))
 }
-Run the App
+```
 
-bash
-Copy code
+### Run the App
+```bash
 go run main.go
-Test Locally
+```
 
-Open: http://localhost:8080/quotes
-You should see a JSON array of quotes.
-5. Containerization with Docker
-Create a Dockerfile
+### Test Locally
+Visit: `http://localhost:8080/quotes` in your browser or use `curl`. You should see a JSON array of quotes.
 
-dockerfile
-Copy code
+## 5. Containerization with Docker
+
+### Create a Dockerfile
+```dockerfile
 # Step 1: Build stage
 FROM golang:1.23 AS builder
 
@@ -152,69 +155,78 @@ FROM scratch
 COPY --from=builder /app/main .
 EXPOSE 8080
 CMD ["./main"]
-Build the Image
+```
 
-bash
-Copy code
+### Build the Image
+```bash
 docker build -t go-quotes-app:latest .
-Run the Container
+```
 
-bash
-Copy code
+### Run the Container
+```bash
 docker run -p 8080:8080 go-quotes-app:latest
-Verify
-Go to http://localhost:8080/quotes.
+```
 
-6. AWS Deployment with Terraform & ECS
-1. Initialize & Apply Terraform
-Terraform Init
-bash
-Copy code
+### Verify
+Go to: `http://localhost:8080/quotes` in your browser or use `curl`.
+
+## 6. AWS Deployment with Terraform & ECS
+
+### 1. Initialize & Apply Terraform
+#### Terraform Init
+```bash
 terraform init
-Terraform Plan
-bash
-Copy code
+```
+#### Terraform Plan
+```bash
 terraform plan
-Terraform Apply
-bash
-Copy code
+```
+#### Terraform Apply
+```bash
 terraform apply
-Type yes when prompted.
-After successful creation, Terraform outputs important info (like repository_url, alb_dns_name, etc.).
-2. Push Docker Image to ECR
-Authenticate Docker to ECR
-bash
-Copy code
+```
+Type `yes` when prompted.
+
+After successful creation, Terraform outputs important information (e.g., `repository_url`, `alb_dns_name`, etc.).
+
+### 2. Push Docker Image to ECR
+#### Authenticate Docker to ECR
+```bash
 aws ecr get-login-password --region us-east-1 \
   | docker login --username AWS --password-stdin 123456789012.dkr.ecr.us-east-1.amazonaws.com
-Tag the Docker Image
-bash
-Copy code
+```
+#### Tag the Docker Image
+```bash
 docker tag go-quotes-app:latest 123456789012.dkr.ecr.us-east-1.amazonaws.com/go-quotes-app:latest
-Push the Docker Image
-bash
-Copy code
+```
+#### Push the Docker Image
+```bash
 docker push 123456789012.dkr.ecr.us-east-1.amazonaws.com/go-quotes-app:latest
-3. ECS Service Deployment & Update
-Option 1: If your Task Definition is already configured for :latest, re-run terraform apply or force a new deployment in ECS.
-Option 2: If you version your images, update the task definition to the new tag and then apply again.
-4. Verification
-Find Your ALB DNS Name
-Terraform output: alb_dns_name, or in AWS Console under EC2 -> Load Balancers.
-Check the /quotes Endpoint
-bash
-Copy code
+```
+
+### 3. ECS Service Deployment & Update
+- Option 1: If your task definition is already configured for `:latest`, re-run `terraform apply` or force a new deployment in ECS.
+- Option 2: If you version your images, update the task definition to the new tag, then apply again.
+
+### 4. Verification
+#### Find Your ALB DNS Name
+- From Terraform output (e.g., `alb_dns_name`), or
+- AWS Console under EC2 -> Load Balancers
+
+#### Check the `/quotes` Endpoint
+```bash
 curl http://<ALB_DNS_NAME>/quotes
+```
 You should see the JSON quotes response.
-7. Cleanup
-Local Cleanup
-Stop the Docker container:
-bash
-Copy code
-docker ps
-docker stop <container-id>
-AWS Resource Cleanup
-bash
-Copy code
+
+## 7. Cleanup
+- To clean up all resources, run:
+```bash
 terraform destroy
-If ECR still has images, remove them manually in the ECR console before destroying.
+```
+Type `yes` when prompted.
+
+## 8. Additional Notes
+- Ensure your AWS credentials have sufficient permissions for ECR, ECS, and ALB.
+- Modify the `main.go` or `Dockerfile` as needed to fit specific project requirements.
+- Use a CI/CD pipeline for automated deployment to AWS.
